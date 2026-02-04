@@ -1,8 +1,280 @@
 <!doctype html>
-<html>
-  <head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
-  <body style="font-family:system-ui;padding:24px">
-    <h1>It works ✅</h1>
-    <p>If you can see this, GitHub Pages is serving index.html correctly.</p>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Will you be my Valentine?</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    body{
+      margin:0; min-height:100vh; display:grid; place-items:center;
+      background:linear-gradient(135deg,#ffe0ec,#fff7d6);
+    }
+    .card{
+      width:min(560px,92vw);
+      background:rgba(255,255,255,.8);
+      border-radius:24px;
+      padding:24px;
+      box-shadow:0 12px 40px rgba(0,0,0,.12);
+    }
+    h1{margin:0 0 8px;font-size:28px}
+    p{margin:0 0 16px;opacity:.85}
+    .stage{
+      position:relative;
+      height:280px;
+      border-radius:18px;
+      background:rgba(255,255,255,.55);
+      border:1px dashed rgba(0,0,0,.12);
+      overflow:hidden;
+      touch-action:manipulation;
+    }
+    .btn{
+      position:absolute;
+      padding:12px 18px;
+      border:0;
+      border-radius:14px;
+      font-weight:800;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    #yes{left:18px;bottom:18px;background:#ff3b7a;color:#fff}
+    #no{left:150px;bottom:18px;background:#111827;color:#fff;touch-action:none}
+
+    .final{display:none;margin-top:14px}
+    .final.show{display:block}
+    .formCard{
+      margin-top:12px;
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.7);
+      border:1px solid rgba(0,0,0,.08);
+    }
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:420px){.grid{grid-template-columns:1fr}}
+    label{display:block;font-size:12px;font-weight:800;opacity:.75;margin:10px 0 6px}
+    input,textarea{
+      width:100%; box-sizing:border-box;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.14);
+      background:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    textarea{min-height:84px;resize:none}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .actionBtn{
+      padding:12px 14px;
+      border-radius:14px;
+      border:0;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .primary{background:#ff3b7a;color:#fff}
+    .secondary{background:#111827;color:#fff}
+    .ghost{background:rgba(17,24,39,.08);border:1px solid rgba(17,24,39,.2);color:#111827}
+    .output{
+      display:none;
+      margin-top:12px;
+      padding:12px;
+      border-radius:14px;
+      background:rgba(255,59,122,.10);
+      border:1px solid rgba(255,59,122,.22);
+      white-space:pre-wrap;
+      font-size:14px;
+    }
+    .output.show{display:block}
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <div id="mainScreen">
+      <h1>Will you be my Valentine? 💘</h1>
+      <p>Choose wisely… “No” is getting nervous 😄</p>
+
+      <div class="stage" id="stage">
+        <button class="btn" id="yes">Yes 💖</button>
+        <button class="btn" id="no">No 🙃</button>
+      </div>
+    </div>
+
+    <div class="final" id="finalScreen">
+      <h2 style="margin:8px 0 4px;text-align:center;">YAYYY 💖💐</h2>
+      <p style="margin:0 0 8px;text-align:center;opacity:.85;">Pick our date 😌</p>
+
+      <div class="formCard">
+        <div class="grid">
+          <div>
+            <label for="datePick">Pick a date</label>
+            <input id="datePick" type="date" />
+          </div>
+          <div>
+            <label for="timePick">Pick a time</label>
+            <input id="timePick" type="time" />
+          </div>
+        </div>
+
+        <label for="note">Message (optional)</label>
+        <textarea id="note" placeholder="Ex: Coffee + walk? Or dinner? 😄"></textarea>
+
+        <div class="actions">
+          <button class="actionBtn primary" id="makeMsg">Generate message</button>
+          <button class="actionBtn secondary" id="copyMsg">Copy for WhatsApp/DM</button>
+          <button class="actionBtn ghost" id="reset">Reset</button>
+        </div>
+
+        <div class="output" id="output"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const stage = document.getElementById("stage");
+      const noBtn = document.getElementById("no");
+      const yesBtn = document.getElementById("yes");
+      const mainScreen = document.getElementById("mainScreen");
+      const finalScreen = document.getElementById("finalScreen");
+
+      const datePick = document.getElementById("datePick");
+      const timePick = document.getElementById("timePick");
+      const note = document.getElementById("note");
+      const makeMsg = document.getElementById("makeMsg");
+      const copyMsg = document.getElementById("copyMsg");
+      const output = document.getElementById("output");
+      const reset = document.getElementById("reset");
+
+      let dodges = 0;
+      let scale = 1;
+      let cooldown = 260;
+      let lastMove = 0;
+
+      function rand(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function placeNoRandom() {
+        const s = stage.getBoundingClientRect();
+        const b = noBtn.getBoundingClientRect();
+        const pad = 12;
+
+        const maxX = s.width - b.width - pad;
+        const maxY = s.height - b.height - pad;
+
+        const x = rand(pad, Math.max(pad, maxX));
+        const y = rand(pad, Math.max(pad, maxY));
+
+        noBtn.style.left = x + "px";
+        noBtn.style.top = y + "px";
+        noBtn.style.bottom = "auto";
+      }
+
+      function dodge(e) {
+        if (e) e.preventDefault();
+        const now = Date.now();
+        if (now - lastMove < cooldown) return;
+        lastMove = now;
+
+        dodges++;
+        scale = Math.max(0.45, 1 - dodges * 0.06);
+        cooldown = Math.max(80, 260 - dodges * 18);
+
+        noBtn.style.transform = "scale(" + scale + ")";
+        if (dodges === 3) noBtn.textContent = "No?? 😭";
+        if (dodges === 6) noBtn.textContent = "Stoppp 😂";
+        if (dodges === 9) noBtn.textContent = "Okay fine 😵";
+
+        placeNoRandom();
+      }
+
+      noBtn.addEventListener("mouseenter", dodge);
+      noBtn.addEventListener("touchstart", dodge, { passive: false });
+      noBtn.addEventListener("click", dodge);
+
+      stage.addEventListener("touchmove", function(){ dodge(); }, { passive: true });
+
+      yesBtn.addEventListener("click", function () {
+        mainScreen.style.display = "none";
+        finalScreen.classList.add("show");
+        setTimeout(function(){ datePick.focus(); }, 250);
+      });
+
+      function fmtDate(v) {
+        if (!v) return "";
+        const parts = v.split("-");
+        const y = Number(parts[0]), m = Number(parts[1]), d = Number(parts[2]);
+        const dt = new Date(y, m - 1, d);
+        try {
+          return dt.toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short" });
+        } catch (_) {
+          return v;
+        }
+      }
+
+      function fmtTime(v) {
+        if (!v) return "";
+        const p = v.split(":");
+        let h = Number(p[0]), mm = Number(p[1] || "0");
+        const ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12; if (h === 0) h = 12;
+        return h + ":" + String(mm).padStart(2, "0") + " " + ampm;
+      }
+
+      function buildMessage() {
+        const d = fmtDate(datePick.value);
+        const t = fmtTime(timePick.value);
+        const when = (d && t) ? (d + " at " + t) : (d || t || "TBD 😌");
+        const extra = (note.value || "").trim();
+
+        let msg = "She said YES 💘\n";
+        msg += "Valentine date: " + when + "\n";
+        if (extra) msg += "Note: " + extra + "\n";
+        msg += "\nNow confirm. No backing out 😂";
+        return msg;
+      }
+
+      makeMsg.addEventListener("click", function () {
+        output.textContent = buildMessage();
+        output.classList.add("show");
+      });
+
+      copyMsg.addEventListener("click", function () {
+        const msg = buildMessage();
+        output.textContent = msg;
+        output.classList.add("show");
+
+        // Clipboard (safe fallback for Android)
+        const ta = document.createElement("textarea");
+        ta.value = msg;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+
+        copyMsg.textContent = "Copied ✅";
+        setTimeout(function(){ copyMsg.textContent = "Copy for WhatsApp/DM"; }, 900);
+      });
+
+      reset.addEventListener("click", function () {
+        finalScreen.classList.remove("show");
+        mainScreen.style.display = "block";
+        output.classList.remove("show");
+        output.textContent = "";
+        datePick.value = "";
+        timePick.value = "";
+        note.value = "";
+
+        dodges = 0; scale = 1; cooldown = 260;
+        noBtn.textContent = "No 🙃";
+        noBtn.style.transform = "scale(1)";
+        noBtn.style.left = "150px";
+        noBtn.style.bottom = "18px";
+        noBtn.style.top = "auto";
+      });
+
+      setTimeout(placeNoRandom, 350);
+    })();
+  </script>
+</body>
 </html>
