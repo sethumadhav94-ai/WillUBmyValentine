@@ -170,40 +170,50 @@
         noBtn.style.bottom = "auto";
       }
 
-      function dodge(e) {
+      let noConverted = false; // ✅ track conversion
+
+function dodge(e) {
   if (e) e.preventDefault();
+
+  // ✅ If No has already turned into Yes, don’t dodge anymore
+  if (noConverted) return;
+
   const now = Date.now();
   if (now - lastMove < cooldown) return;
   lastMove = now;
 
   dodges++;
 
-  // ✅ After 30 tries, convert No into Yes
-  if (dodges >= 30) {
+  // ✅ After 30 tries, convert No into Yes (but allow click)
+  if (dodges >= 20) {
+    noConverted = true;
+
     noBtn.textContent = "Your No's are Yes!! 💘";
     noBtn.style.transform = "scale(1)";
     noBtn.style.background = "#ff3b7a";
+    noBtn.style.cursor = "pointer";
 
-    // Trigger YES screen automatically
-    setTimeout(function () {
-      mainScreen.style.display = "none";
-      finalScreen.classList.add("show");
-      setTimeout(function(){ datePick.focus(); }, 250);
-    }, 600);
+    // ✅ Place button nicely in center
+    noBtn.style.left = "30%";
+    noBtn.style.top = "30%";
+    noBtn.style.bottom = "auto";
+    noBtn.style.transform = "translate(-30%, -30%) scale(1)";
 
     return;
   }
 
+  // Normal dodge behaviour
   scale = Math.max(0.45, 1 - dodges * 0.06);
   cooldown = Math.max(80, 260 - dodges * 18);
 
   noBtn.style.transform = "scale(" + scale + ")";
+
   if (dodges === 3) noBtn.textContent = "No?? 😭";
   if (dodges === 6) noBtn.textContent = "Stoppp 😂";
   if (dodges === 9) noBtn.textContent = "Okay fine 😵";
 
   placeNoRandom();
-      }
+}
 
       noBtn.addEventListener("mouseenter", dodge);
       noBtn.addEventListener("touchstart", dodge, { passive: false });
