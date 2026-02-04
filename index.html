@@ -171,21 +171,38 @@
       }
 
       function dodge(e) {
-        if (e) e.preventDefault();
-        const now = Date.now();
-        if (now - lastMove < cooldown) return;
-        lastMove = now;
+  if (e) e.preventDefault();
+  const now = Date.now();
+  if (now - lastMove < cooldown) return;
+  lastMove = now;
 
-        dodges++;
-        scale = Math.max(0.45, 1 - dodges * 0.06);
-        cooldown = Math.max(80, 260 - dodges * 18);
+  dodges++;
 
-        noBtn.style.transform = "scale(" + scale + ")";
-        if (dodges === 3) noBtn.textContent = "No?? 😭";
-        if (dodges === 6) noBtn.textContent = "Stoppp 😂";
-        if (dodges === 9) noBtn.textContent = "Okay fine 😵";
+  // ✅ After 30 tries, convert No into Yes
+  if (dodges >= 30) {
+    noBtn.textContent = "Your No's are Yes!! 💘";
+    noBtn.style.transform = "scale(1)";
+    noBtn.style.background = "#ff3b7a";
 
-        placeNoRandom();
+    // Trigger YES screen automatically
+    setTimeout(function () {
+      mainScreen.style.display = "none";
+      finalScreen.classList.add("show");
+      setTimeout(function(){ datePick.focus(); }, 250);
+    }, 600);
+
+    return;
+  }
+
+  scale = Math.max(0.45, 1 - dodges * 0.06);
+  cooldown = Math.max(80, 260 - dodges * 18);
+
+  noBtn.style.transform = "scale(" + scale + ")";
+  if (dodges === 3) noBtn.textContent = "No?? 😭";
+  if (dodges === 6) noBtn.textContent = "Stoppp 😂";
+  if (dodges === 9) noBtn.textContent = "Okay fine 😵";
+
+  placeNoRandom();
       }
 
       noBtn.addEventListener("mouseenter", dodge);
